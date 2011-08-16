@@ -33,7 +33,7 @@ $app->get('/login', function () use ($app) {
 	return $app->redirect('https://twitter.com/oauth/authenticate?oauth_token=' . $request_token['oauth_token']);
 });
 
-$app->get('/auth', function() use ($app, $pdo) {
+$app->get('/auth', function() use ($app) {
 	// check if the user is already logged-in
 	if (null !== ($username = $app['session']->get('username'))) {
 		return $app->redirect('/');
