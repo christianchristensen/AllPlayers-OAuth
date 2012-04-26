@@ -1,23 +1,27 @@
 <?php
-define('CONS_KEY', 'Application consumer key');
-define('CONS_SECRET', 'Application consumer secret');
+use Symfony\Component\HttpFoundation\Tests\RequestContentProxy;
 
-require_once __DIR__.'/silex.phar'; 
+use Symfony\Component\HttpFoundation\Request;
 
-$app = new Silex\Application(); 
+define('CONS_KEY', 'deadbeef');
+define('CONS_SECRET', 'deadbeef');
+
+require_once __DIR__.'/vendor/autoload.php';
+
+$app = new Silex\Application();
 
 // register the session extension
-$app->register(new Silex\Extension\SessionExtension());
+$app->register(new Silex\Provider\SessionServiceProvider());
 
-$app->get('/', function() use($app) { 
+$app->get('/', function() use($app) {
 	$username = $app['session']->get('username');
 
 	if ($username == null) {
-		return 'Welcome Guest. <a href="/login">Login</a>'; 
+		return 'Welcome Guest. <a href="/login">Login</a>';
 	} else {
 		return 'Welcome ' . $app->escape($username);
 	}
-}); 
+});
 
 $app->get('/login', function () use ($app) {
 	// check if the user is already logged-in
@@ -25,12 +29,16 @@ $app->get('/login', function () use ($app) {
 		return $app->redirect('/');
 	}
 
-	$oauth = new OAuth(CONS_KEY, CONS_SECRET, OAUTH_SIG_METHOD_HMACSHA1, OAUTH_AUTH_TYPE_URI);
-	$request_token = $oauth->getRequestToken('https://twitter.com/oauth/request_token');
+	$consumer = new \Eher\OAuth\Consumer(CONS_KEY, CONS_SECRET, OAUTH_SIG_METHOD_HMACSHA1, OAUTH_AUTH_TYPE_URI);
+	$request_token = \Eher\OAuth\Request::from_consumer_and_token($consumer, NULL, 'GET', 'https://www.allplayers.com/oauth/request_token', '');
+	$request_token->sign_request(new \Eher\OAuth\HmacSha1(), $consumer, NULL);
+	$response = \Httpful\Request::get($request_token->to_url())->sendIt();
+	$response = explode('&', $response);
+	$oauth_token = array_pop(explode('=', $response[0]));
+	$oauth_token_secret = array_pop(explode('=', $response[1]));
 
-	$app['session']->set('secret', $request_token['oauth_token_secret']);
-
-	return $app->redirect('https://twitter.com/oauth/authenticate?oauth_token=' . $request_token['oauth_token']);
+	$app['session']->set('secret', $oauth_token_secret);
+	return $app->redirect('https://www.allplayers.com/oauth/authorize?oauth_token=' . $oauth_token);
 });
 
 $app->get('/auth', function() use ($app) {
