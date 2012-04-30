@@ -1,7 +1,14 @@
 {
+    "repositories": [
+        {
+            "type": "pear",
+            "url": "http://pear.php.net"
+        }
+    ],
     "require": {
         "silex/silex": "1.0.*",
-        "Eher/OAuth": "1.0.*",
-        "nategood/httpful": "*"
+        "pear-pear/HTTP_Request2": "*",
+        "pear-pear/HTTP_OAuth": "*",
+        "pear-pear/Log": "*"
     }
 }
