@@ -1,6 +1,8 @@
 <?php
 use Symfony\Component\HttpFoundation\Tests\RequestContentProxy;
 use Symfony\Component\HttpFoundation\Request;
+use HTTP\OAuth;
+use HTTP\OAuth_Consumer;
 
 define('CONS_KEY', 'deadbeef');
 define('CONS_SECRET', 'deadbeef');
