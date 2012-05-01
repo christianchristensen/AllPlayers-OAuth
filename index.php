@@ -11,6 +11,9 @@ require_once __DIR__.'/vendor/autoload.php';
 
 $app = new Silex\Application();
 
+// Debug helper provided by Silex
+$app['debug'] = TRUE;
+
 // register the session extension
 $app->register(new Silex\Provider\SessionServiceProvider());
 
