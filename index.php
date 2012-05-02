@@ -19,10 +19,11 @@ $app->get('/', function() use($app) {
   $app['session']->start();
   $username = $app['session']->get('username');
 
+  $sourcelink = '<br /><br />Source: <a href="https://gist.github.com/2495726#file_index.php">gist.github.com/2495726</a>';
   if ($username == null) {
-    return 'Welcome Guest. <a href="/login">Login</a>';
+    return 'Welcome Guest. <a href="/login">Login</a>' . $sourcelink;
   } else {
-    return 'Welcome ' . $app->escape($username);
+    return 'Welcome ' . $app->escape($username) . $sourcelink;
   }
 });
 
