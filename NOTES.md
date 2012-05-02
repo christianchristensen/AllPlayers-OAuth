@@ -11,3 +11,4 @@
 ## misc
 
 *  http://davidwalsh.name/php-ssl-curl-error
+*  http://pear.php.net/manual/en/package.http.http-request2.config.php
