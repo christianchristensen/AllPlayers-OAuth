@@ -1,8 +1,6 @@
 <?php
 use Symfony\Component\HttpFoundation\Tests\RequestContentProxy;
 use Symfony\Component\HttpFoundation\Request;
-use HTTP\OAuth;
-use HTTP\OAuth_Consumer;
 
 define('CONS_KEY', 'deadbeef');
 define('CONS_SECRET', 'deadbeef');
@@ -36,6 +34,9 @@ $app->get('/login', function () use ($app) {
   }
 
   $oauth = new HTTP_OAuth_Consumer(CONS_KEY, CONS_SECRET);
+  $oauth->accept(new HTTP_Request2(NULL, NULL, array(
+    'ssl_cafile' => 'assets/mozilla.pem',
+  )));
   $oauth->getRequestToken('https://www.allplayers.com/oauth/request_token');
   $oauth_token = $oauth->getToken();
   $oauth_token_secret = $oauth->getTokenSecret();
@@ -60,7 +61,9 @@ $app->get('/auth', function() use ($app) {
   }
 
   $oauth = new HTTP_OAuth_Consumer(CONS_KEY, CONS_SECRET);
-  $oauth->attachLog(Log::factory('console', '', 'TEST'));
+  $oauth->accept(new HTTP_Request2(NULL, NULL, array(
+    'ssl_cafile' => 'assets/mozilla.pem',
+  )));
   $oauth->setToken($oauth_token);
   $oauth->setTokenSecret($secret);
   try {
@@ -84,6 +87,9 @@ $app->get('/req', function () use ($app) {
     return $app->redirect('/');
   }
   $oauth = new HTTP_OAuth_Consumer(CONS_KEY, CONS_SECRET);
+  $oauth->accept(new HTTP_Request2(NULL, NULL, array(
+    'ssl_cafile' => 'assets/mozilla.pem',
+  )));
   $oauth->setToken($token);
   $oauth->setTokenSecret($secret);
   // TODO: Push this upstream to SDK lib
