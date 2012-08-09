@@ -1,25 +1,7 @@
 {
-    "repositories": [
-        {
-            "type": "pear",
-            "url": "http://pear.php.net"
-        }
-    ],
     "require": {
         "silex/silex": "1.0.*",
-        "pear-pear/HTTP_Request2": "*",
-        "pear-pear/HTTP_OAuth": "*",
-        "pear-pear/Log": "*"
+        "guzzle/guzzle": "2.8.*"
     },
-    "include-path": [
-      "vendor/pear-pear/Archive_Tar/",
-      "vendor/pear-pear/Console_Getopt/",
-      "vendor/pear-pear/HTTP_OAuth/",
-      "vendor/pear-pear/HTTP_Request2/",
-      "vendor/pear-pear/Log/",
-      "vendor/pear-pear/Net_URL2/",
-      "vendor/pear-pear/PEAR/PEAR-1.9.4/",
-      "vendor/pear-pear/Structures_Graph/",
-      "vendor/pear-pear/XML_Util/"
-    ]
+    "minimum-stability": "dev"
 }
