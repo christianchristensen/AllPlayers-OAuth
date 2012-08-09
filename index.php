@@ -1,6 +1,8 @@
 <?php
 use Symfony\Component\HttpFoundation\Tests\RequestContentProxy;
 use Symfony\Component\HttpFoundation\Request;
+use Guzzle\Http\Client;
+use Guzzle\Http\Plugin\OauthPlugin;
 
 define('CONS_KEY', 'deadbeef');
 define('CONS_SECRET', 'deadbeef');
@@ -34,18 +36,27 @@ $app->get('/login', function () use ($app) {
     return $app->redirect('/');
   }
 
-  $oauth = new HTTP_OAuth_Consumer(CONS_KEY, CONS_SECRET);
-  $oauth->accept(new HTTP_Request2(NULL, NULL, array(
-    'ssl_cafile' => 'assets/mozilla.pem',
-  )));
-  $oauth->getRequestToken('https://www.allplayers.com/oauth/request_token');
-  $oauth_token = $oauth->getToken();
-  $oauth_token_secret = $oauth->getTokenSecret();
+  $client = new Client('https://www.allplayers.com/oauth', array(
+    'curl.CURLOPT_SSL_VERIFYPEER' => TRUE,
+    'curl.CURLOPT_CAINFO' => 'assets/mozilla.pem',
+  ));
+  $oauth = new OauthPlugin(array(
+    'consumer_key' => CONS_KEY,
+    'consumer_secret' => CONS_SECRET,
+    'token' => '',
+    'token_secret' => '',
+  ));
+  $client->addSubscriber($oauth);
+
+  $response = $client->get('request_token')->send();
+  // TODO: Pull out temp token info from response.
+  //$oauth_token = $oauth->getToken();
+  //$oauth_token_secret = $oauth->getTokenSecret();
 
   $app['session']->set('access_token', $oauth_token);
   $app['session']->set('access_secret', $oauth_token_secret);
 
-  return $app->redirect('https://www.allplayers.com/oauth/authorize?oauth_token=' . $oauth_token);
+  //return $app->redirect('https://www.allplayers.com/oauth/authorize?oauth_token=' . $oauth_token);
 });
 
 $app->get('/auth', function() use ($app) {
