@@ -17,13 +17,30 @@ $app['debug'] = TRUE;
 // register the session extension
 $app->register(new Silex\Provider\SessionServiceProvider());
 
+// Setup app default settings
+$app->before(function (Request $request) use($app) {
+  $app['session']->start();
+  $domain = $app['session']->get('domain');
+  if ($domain == null) {
+    // if (detect query param...) set env
+    if ($env = $request->query->get('envuri')) {
+      $app['session']->set('domain', $env);
+    }
+    else {
+      $app['session']->set('domain', 'https://www.allplayers.com');
+    }
+  }
+});
+
 $app->get('/', function() use($app) {
   $app['session']->start();
   $username = $app['session']->get('username');
 
+  $info = '<br /> Context: ' . $app['session']->get('domain');
   $sourcelink = '<br /><br /><a href="https://gist.github.com/2495726#file_index.php">Source code</a>';
+  $info .= $sourcelink;
   if ($username == null) {
-    return 'Welcome Guest. <a href="/login">Login</a>' . $sourcelink;
+    return 'Welcome Guest. <a href="/login">Login</a>' . $info;
   } else {
     $temp_token = $app['session']->get('access_token');
     $temp_secret = $app['session']->get('access_secret');
@@ -31,7 +48,7 @@ $app->get('/', function() use($app) {
     $secret = $app['session']->get('auth_secret');
     // twig/template this
     $keyinfo  = '<br /><br /> <a href="/keyinfo">Key info</a>';
-    return 'Welcome ' . $app->escape($username) . $keyinfo . $sourcelink;
+    return 'Welcome ' . $app->escape($username) . $keyinfo . $info;
   }
 });
 
@@ -66,7 +83,7 @@ $app->get('/login', function() use ($app) {
     return $app->redirect('/');
   }
 
-  $client = new Client('https://www.allplayers.com/oauth', array(
+  $client = new Client($app['session']->get('domain') . '/oauth', array(
     'curl.CURLOPT_SSL_VERIFYPEER' => TRUE,
     'curl.CURLOPT_CAINFO' => 'assets/mozilla.pem',
     'curl.CURLOPT_FOLLOWLOCATION' => FALSE,
@@ -92,7 +109,7 @@ $app->get('/login', function() use ($app) {
   $app['session']->set('access_token', $oauth_tokens['oauth_token']);
   $app['session']->set('access_secret', $oauth_tokens['oauth_token_secret']);
 
-  return $app->redirect('https://www.allplayers.com/oauth/authorize?oauth_token=' . $oauth_tokens['oauth_token']);
+  return $app->redirect($app['session']->get('domain') . '/oauth/authorize?oauth_token=' . $oauth_tokens['oauth_token']);
 });
 
 $app->get('/auth', function() use ($app) {
@@ -107,7 +124,7 @@ $app->get('/auth', function() use ($app) {
   if ($oauth_token == null) {
     $app->abort(400, 'Invalid token');
   }
-  $client = new Client('https://www.allplayers.com/oauth', array(
+  $client = new Client($app['session']->get('domain') . '/oauth', array(
     'curl.CURLOPT_SSL_VERIFYPEER' => TRUE,
     'curl.CURLOPT_CAINFO' => 'assets/mozilla.pem',
     'curl.CURLOPT_FOLLOWLOCATION' => FALSE,
@@ -139,7 +156,7 @@ $app->get('/req', function () use ($app) {
     return $app->redirect('/');
   }
 
-  $client = new Client('https://www.allplayers.com/api/v1/rest', array(
+  $client = new Client($app['session']->get('domain') . '/api/v1/rest', array(
     'curl.CURLOPT_SSL_VERIFYPEER' => TRUE,
     'curl.CURLOPT_CAINFO' => 'assets/mozilla.pem',
     'curl.CURLOPT_FOLLOWLOCATION' => FALSE,
