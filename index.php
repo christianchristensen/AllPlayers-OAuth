@@ -30,6 +30,23 @@ $app->get('/', function() use($app) {
     $token = $app['session']->get('auth_token');
     $secret = $app['session']->get('auth_secret');
     // twig/template this
+    $keyinfo  = '<br /><br /> <a href="/keyinfo">Key info</a>';
+    return 'Welcome ' . $app->escape($username) . $keyinfo . $sourcelink;
+  }
+});
+
+$app->get('/keyinfo', function() use($app) {
+  $app['session']->start();
+  $username = $app['session']->get('username');
+
+  if ($username == null) {
+    return $app->redirect('/');
+  } else {
+    $temp_token = $app['session']->get('access_token');
+    $temp_secret = $app['session']->get('access_secret');
+    $token = $app['session']->get('auth_token');
+    $secret = $app['session']->get('auth_secret');
+    // twig/template this
     $keyinfo  = '<br /><br /> Key info: <ul>';
     $keyinfo .= '<li>Consumer Key: ' . CONS_KEY . '</li>';
     $keyinfo .= '<li>Consumer Secret: ' . CONS_SECRET . '</li>';
@@ -38,7 +55,7 @@ $app->get('/', function() use($app) {
     $keyinfo .= '<li>Token: ' . $token . '</li>';
     $keyinfo .= '<li>Secret: ' . $secret . '</li>';
     $keyinfo .= '</ul>';
-    return 'Welcome ' . $app->escape($username) . $keyinfo . $sourcelink;
+    return 'Welcome ' . $app->escape($username) . $keyinfo;
   }
 });
 
