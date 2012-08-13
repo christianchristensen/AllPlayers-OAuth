@@ -1,9 +1,11 @@
 {
-    "hash": "88bd01e68c5c037aaf2911240e2de927",
+    "hash": "7de3e98681d3ad413711a5ba102ebe47",
     "packages": [
         {
             "package": "guzzle/guzzle",
-            "version": "v2.8.3"
+            "version": "dev-request_token",
+            "source-reference": "e4f2ffc4e314dc97e022fab2f05047e55f8bb62e",
+            "commit-date": "1344826133"
         },
         {
             "package": "pimple/pimple",
@@ -38,7 +40,7 @@
         {
             "package": "symfony/event-dispatcher",
             "version": "dev-master",
-            "source-reference": "v2.1.0-RC1",
+            "source-reference": "v2.1.0-BETA4",
             "commit-date": "1342739894"
         },
         {
@@ -50,8 +52,8 @@
         {
             "package": "symfony/http-foundation",
             "version": "dev-master",
-            "source-reference": "v2.1.0-RC1",
-            "commit-date": "1344071918"
+            "source-reference": "9a509ac3bb52076f5a765a85e9552042b40ce287",
+            "commit-date": "1344594770"
         },
         {
             "package": "symfony/http-kernel",
@@ -83,7 +85,7 @@
 
     ],
     "minimum-stability": "dev",
-    "stability-flags": [
-
-    ]
+    "stability-flags": {
+        "guzzle/guzzle": 20
+    }
 }
