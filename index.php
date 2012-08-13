@@ -51,17 +51,16 @@ $app->get('/login', function() use ($app) {
 
   // if $request path !set then set to request_token
   $request = $client->get('request_token');
-  $timestamp = date('U');
+  $timestamp = time();
   $params = $oauth->getParamsToSign($request, $timestamp);
-  $string = $oauth->getSignature($request, $timestamp);
-  $params['oauth_signature'] = $string;
+  $params['oauth_signature'] = $oauth->getSignature($request, $timestamp);
   $response = $client->get('request_token?' . http_build_query($params))->send();
 
   // Parse oauth tokens from response object
   $oauth_tokens = array();
   parse_str($response->getBody(TRUE), $oauth_tokens);
   $app['session']->set('access_token', $oauth_tokens['oauth_token']);
-  $app['session']->set('access_secret', $oauth_token['oauth_token_secret']);
+  $app['session']->set('access_secret', $oauth_tokens['oauth_token_secret']);
 
   return $app->redirect('https://www.allplayers.com/oauth/authorize?oauth_token=' . $oauth_tokens['oauth_token']);
 });
@@ -78,23 +77,27 @@ $app->get('/auth', function() use ($app) {
   if ($oauth_token == null) {
     $app->abort(400, 'Invalid token');
   }
+  $client = new Client('https://www.allplayers.com/oauth', array(
+    'curl.CURLOPT_SSL_VERIFYPEER' => TRUE,
+    'curl.CURLOPT_CAINFO' => 'assets/mozilla.pem',
+    'curl.CURLOPT_FOLLOWLOCATION' => FALSE,
+  ));
 
-  $oauth = new HTTP_OAuth_Consumer(CONS_KEY, CONS_SECRET);
-  $oauth->accept(new HTTP_Request2(NULL, NULL, array(
-    'ssl_cafile' => 'assets/mozilla.pem',
-  )));
-  $oauth->setToken($oauth_token);
-  $oauth->setTokenSecret($secret);
-  try {
-    $oauth->getAccessToken('https://www.allplayers.com/oauth/access_token');
-  } catch (OAuthException $e) {
-    $app->abort(401, $e->getMessage());
-  }
+  $oauth = new OauthPlugin(array(
+    'consumer_key' => CONS_KEY,
+    'consumer_secret' => CONS_SECRET,
+    'token' => $oauth_token,
+    'token_secret' => $secret,
+  ));
+  $client->addSubscriber($oauth);
 
-  // Set authorized token details for subsequent requests
-  $app['session']->set('auth_token', $oauth->getToken());
-  $app['session']->set('auth_secret', $oauth->getTokenSecret());
+  $response = $client->get('access_token')->send();
 
+  // Parse oauth tokens from response object
+  $oauth_tokens = array();
+  parse_str($response->getBody(TRUE), $oauth_tokens);
+  $app['session']->set('auth_token', $oauth_tokens['oauth_token']);
+  $app['session']->set('auth_secret', $oauth_tokens['oauth_token_secret']);
   return $app->redirect('/req');
 });
 
@@ -105,16 +108,25 @@ $app->get('/req', function () use ($app) {
   if (null === ($secret = $app['session']->get('auth_secret'))) {
     return $app->redirect('/');
   }
-  $oauth = new HTTP_OAuth_Consumer(CONS_KEY, CONS_SECRET);
-  $oauth->accept(new HTTP_Request2(NULL, NULL, array(
-    'ssl_cafile' => 'assets/mozilla.pem',
-  )));
-  $oauth->setToken($token);
-  $oauth->setTokenSecret($secret);
-  // TODO: Push this upstream to SDK lib
-  $oauth->sendRequest('https://www.allplayers.com/?q=api/v1/rest/groups/54395c18-f611-11e0-a44b-12313d04fc0f.json', array(), 'GET');
-  $response = $oauth->getLastResponse();
-  $json = json_decode($response->getResponse()->getBody());
+
+  $client = new Client('https://www.allplayers.com/api/v1/rest', array(
+    'curl.CURLOPT_SSL_VERIFYPEER' => TRUE,
+    'curl.CURLOPT_CAINFO' => 'assets/mozilla.pem',
+    'curl.CURLOPT_FOLLOWLOCATION' => FALSE,
+  ));
+
+  $oauth = new OauthPlugin(array(
+    'consumer_key' => CONS_KEY,
+    'consumer_secret' => CONS_SECRET,
+    'token' => $token,
+    'token_secret' => $secret,
+  ));
+  $client->addSubscriber($oauth);
+
+  $response = $client->get('users/current.json')->send();
+  // Note: getLocation returns full URL info, but seems to work as a request in Guzzle
+  $response = $client->get($response->getLocation())->send();
+  $json = json_decode($response->getBody(TRUE));
 
   // HACK: set username to group UUID (eventually move this to users/current.json)
   $app['session']->set('username', $json->uuid);
