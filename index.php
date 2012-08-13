@@ -29,7 +29,7 @@ $app->get('/', function() use($app) {
   }
 });
 
-$app->get('/login', function () use ($app) {
+$app->get('/login', function() use ($app) {
   $app['session']->start();
   // check if the user is already logged-in
   if (null !== ($username = $app['session']->get('username'))) {
@@ -39,24 +39,31 @@ $app->get('/login', function () use ($app) {
   $client = new Client('https://www.allplayers.com/oauth', array(
     'curl.CURLOPT_SSL_VERIFYPEER' => TRUE,
     'curl.CURLOPT_CAINFO' => 'assets/mozilla.pem',
+    'curl.CURLOPT_FOLLOWLOCATION' => FALSE,
   ));
+
   $oauth = new OauthPlugin(array(
     'consumer_key' => CONS_KEY,
     'consumer_secret' => CONS_SECRET,
-    'token' => '',
-    'token_secret' => '',
+    'token' => FALSE,
+    'token_secret' => FALSE,
   ));
-  $client->addSubscriber($oauth);
 
-  $response = $client->get('request_token')->send();
-  // TODO: Pull out temp token info from response.
-  //$oauth_token = $oauth->getToken();
-  //$oauth_token_secret = $oauth->getTokenSecret();
+  // if $request path !set then set to request_token
+  $request = $client->get('request_token');
+  $timestamp = date('U');
+  $params = $oauth->getParamsToSign($request, $timestamp);
+  $string = $oauth->getSignature($request, $timestamp);
+  $params['oauth_signature'] = $string;
+  $response = $client->get('request_token?' . http_build_query($params))->send();
 
-  $app['session']->set('access_token', $oauth_token);
-  $app['session']->set('access_secret', $oauth_token_secret);
+  // Parse oauth tokens from response object
+  $oauth_tokens = array();
+  parse_str($response->getBody(TRUE), $oauth_tokens);
+  $app['session']->set('access_token', $oauth_tokens['oauth_token']);
+  $app['session']->set('access_secret', $oauth_token['oauth_token_secret']);
 
-  //return $app->redirect('https://www.allplayers.com/oauth/authorize?oauth_token=' . $oauth_token);
+  return $app->redirect('https://www.allplayers.com/oauth/authorize?oauth_token=' . $oauth_tokens['oauth_token']);
 });
 
 $app->get('/auth', function() use ($app) {
