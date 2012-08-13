@@ -76,7 +76,7 @@ $app->get('/keyinfo', function() use($app) {
   }
 });
 
-$app->get('/login', function() use ($app) {
+$app->get('/login', function(Request $request) use ($app) {
   $app['session']->start();
   // check if the user is already logged-in
   if (null !== ($username = $app['session']->get('username'))) {
@@ -97,10 +97,9 @@ $app->get('/login', function() use ($app) {
   ));
 
   // if $request path !set then set to request_token
-  $request = $client->get('request_token');
   $timestamp = time();
-  $params = $oauth->getParamsToSign($request, $timestamp);
-  $params['oauth_signature'] = $oauth->getSignature($request, $timestamp);
+  $params = $oauth->getParamsToSign($client->get('request_token'), $timestamp);
+  $params['oauth_signature'] = $oauth->getSignature($client->get('request_token'), $timestamp);
   $response = $client->get('request_token?' . http_build_query($params))->send();
 
   // Parse oauth tokens from response object
@@ -109,7 +108,9 @@ $app->get('/login', function() use ($app) {
   $app['session']->set('access_token', $oauth_tokens['oauth_token']);
   $app['session']->set('access_secret', $oauth_tokens['oauth_token_secret']);
 
-  return $app->redirect($app['session']->get('domain') . '/oauth/authorize?oauth_token=' . $oauth_tokens['oauth_token']);
+  $authorize = '/oauth/authorize?oauth_token=' . $oauth_tokens['oauth_token'];
+  $authorize .= '&oauth_callback=' . urlencode($request->getSchemeAndHttpHost() . '/auth');
+  return $app->redirect($app['session']->get('domain') . $authorize);
 });
 
 $app->get('/auth', function() use ($app) {
