@@ -30,6 +30,18 @@ $app->before(function (Request $request) use($app) {
       $app['session']->set('domain', 'https://www.allplayers.com');
     }
   }
+  $consumer_key = $app['session']->get('consumer_key');
+  if ($consumer_key == null) {
+    if ($key = $request->query->get('key')) {
+      $secret = $request->query->get('secret');
+      $app['session']->set('consumer_key', $key);
+      $app['session']->set('consumer_secret', $secret);
+    }
+    else {
+      $app['session']->set('consumer_key', CONS_KEY);
+      $app['session']->set('consumer_secret', CONS_SECRET);
+    }
+  }
 });
 
 $app->get('/', function() use($app) {
@@ -59,14 +71,16 @@ $app->get('/keyinfo', function() use($app) {
   if ($username == null) {
     return $app->redirect('/');
   } else {
+    $consumer_key = $app['session']->get('consumer_key');
+    $consumer_secret = $app['session']->get('consumer_secret');
     $temp_token = $app['session']->get('access_token');
     $temp_secret = $app['session']->get('access_secret');
     $token = $app['session']->get('auth_token');
     $secret = $app['session']->get('auth_secret');
     // twig/template this
     $keyinfo  = '<br /><br /> Key info: <ul>';
-    $keyinfo .= '<li>Consumer Key: ' . CONS_KEY . '</li>';
-    $keyinfo .= '<li>Consumer Secret: ' . CONS_SECRET . '</li>';
+    $keyinfo .= '<li>Consumer Key: ' . $consumer_key . '</li>';
+    $keyinfo .= '<li>Consumer Secret: ' . $consumer_secret . '</li>';
     $keyinfo .= '<li><strike>Temp Key: ' . $temp_token . '</strike></li>';
     $keyinfo .= '<li><strike>Temp Secret: ' . $temp_secret . '</strike></li>';
     $keyinfo .= '<li>Token: ' . $token . '</li>';
@@ -90,8 +104,8 @@ $app->get('/login', function(Request $request) use ($app) {
   ));
 
   $oauth = new OauthPlugin(array(
-    'consumer_key' => CONS_KEY,
-    'consumer_secret' => CONS_SECRET,
+    'consumer_key' => $app['session']->get('consumer_key'),
+    'consumer_secret' => $app['session']->get('consumer_secret'),
     'token' => FALSE,
     'token_secret' => FALSE,
   ));
@@ -132,8 +146,8 @@ $app->get('/auth', function() use ($app) {
   ));
 
   $oauth = new OauthPlugin(array(
-    'consumer_key' => CONS_KEY,
-    'consumer_secret' => CONS_SECRET,
+    'consumer_key' => $app['session']->get('consumer_key'),
+    'consumer_secret' => $app['session']->get('consumer_secret'),
     'token' => $oauth_token,
     'token_secret' => $secret,
   ));
@@ -164,8 +178,8 @@ $app->get('/req', function () use ($app) {
   ));
 
   $oauth = new OauthPlugin(array(
-    'consumer_key' => CONS_KEY,
-    'consumer_secret' => CONS_SECRET,
+    'consumer_key' => $app['session']->get('consumer_key'),
+    'consumer_secret' => $app['session']->get('consumer_secret'),
     'token' => $token,
     'token_secret' => $secret,
   ));
