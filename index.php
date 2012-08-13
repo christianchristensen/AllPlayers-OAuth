@@ -21,11 +21,24 @@ $app->get('/', function() use($app) {
   $app['session']->start();
   $username = $app['session']->get('username');
 
-  $sourcelink = '<br /><br />Source: <a href="https://gist.github.com/2495726#file_index.php">gist.github.com/2495726</a>';
+  $sourcelink = '<br /><br /><a href="https://gist.github.com/2495726#file_index.php">Source code</a>';
   if ($username == null) {
     return 'Welcome Guest. <a href="/login">Login</a>' . $sourcelink;
   } else {
-    return 'Welcome ' . $app->escape($username) . $sourcelink;
+    $temp_token = $app['session']->get('access_token');
+    $temp_secret = $app['session']->get('access_secret');
+    $token = $app['session']->get('auth_token');
+    $secret = $app['session']->get('auth_secret');
+    // twig/template this
+    $keyinfo  = '<br /><br /> Key info: <ul>';
+    $keyinfo .= '<li>Consumer Key: ' . CONS_KEY . '</li>';
+    $keyinfo .= '<li>Consumer Secret: ' . CONS_SECRET . '</li>';
+    $keyinfo .= '<li><strike>Temp Key: ' . $temp_token . '</strike></li>';
+    $keyinfo .= '<li><strike>Temp Secret: ' . $temp_secret . '</strike></li>';
+    $keyinfo .= '<li>Token: ' . $token . '</li>';
+    $keyinfo .= '<li>Secret: ' . $secret . '</li>';
+    $keyinfo .= '</ul>';
+    return 'Welcome ' . $app->escape($username) . $keyinfo . $sourcelink;
   }
 });
 
@@ -129,7 +142,7 @@ $app->get('/req', function () use ($app) {
   $json = json_decode($response->getBody(TRUE));
 
   // HACK: set username to group UUID (eventually move this to users/current.json)
-  $app['session']->set('username', $json->uuid);
+  $app['session']->set('username', $json->username . " ($json->uuid)");
   return $app->redirect('/');
 });
 
