@@ -127,6 +127,12 @@ $app->get('/login', function(Request $request) use ($app) {
   return $app->redirect($app['session']->get('domain') . $authorize);
 });
 
+$app->get('/logout', function() use($app) {
+ $app['session']->start();
+ session_destroy();
+ return $app->redirect('/');
+});
+
 $app->get('/auth', function() use ($app) {
   $app['session']->start();
   // check if the user is already logged-in or we're already auth
