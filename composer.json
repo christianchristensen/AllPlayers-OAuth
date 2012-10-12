@@ -1,13 +1,7 @@
 {
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "http://github.com/christianchristensen/guzzle"
-        }
-    ],
     "require": {
         "silex/silex": "1.0.*",
-        "guzzle/guzzle": "dev-request_token"
+        "allplayers/allplayers": "dev-master"
     },
     "minimum-stability": "dev"
 }
