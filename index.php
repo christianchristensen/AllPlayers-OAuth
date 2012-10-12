@@ -201,6 +201,100 @@ $app->get('/req', function () use ($app) {
   return $app->redirect('/');
 });
 
+$app->get('/copygroup', function () use ($app) {
+  $app['session']->start();
+  $token = $app['session']->get('auth_token');
+  // check if we have our auth keys
+  if (null === ($secret = $app['session']->get('auth_secret'))) {
+   return $app->redirect('/');
+  }
+
+  $output = '';
+
+  // Flash messages support
+  $flash = $app[ 'session' ]->get( 'flash' );
+  $app[ 'session' ]->set( 'flash', null );
+
+  if ( !empty( $flash ) )
+  {
+    $output .= $flash['short'] . '<hr /><br />';
+  }
+
+
+  $client = new Client($app['session']->get('domain') . '/api/v1/rest', array(
+    'curl.CURLOPT_SSL_VERIFYPEER' => TRUE,
+    'curl.CURLOPT_CAINFO' => 'assets/mozilla.pem',
+    'curl.CURLOPT_FOLLOWLOCATION' => FALSE,
+  ));
+
+  $oauth = new OauthPlugin(array(
+    'consumer_key' => $app['session']->get('consumer_key'),
+    'consumer_secret' => $app['session']->get('consumer_secret'),
+    'token' => $token,
+    'token_secret' => $secret,
+  ));
+  $client->addSubscriber($oauth);
+
+  $response = $client->get('users/current/groups.json?limit=1000')->send();
+  // Note: getLocation returns full URL info, but seems to work as a request in Guzzle
+  $response = $client->get($response->getLocation())->send();
+  $groups = json_decode($response->getBody(TRUE));
+
+  $options = '';
+  foreach ($groups as $group) {
+    $uuid = $group->uuid;
+    $title = $group->title;
+    $options .= "<option value=\"$uuid\">$title</option>";
+  }
+  $output .= <<<HEREDOC
+<form name="copyform" method="POST" action="/copygroup">
+  <select name="copy_from">
+    $options
+  </select>
+  <select name="copy_to">
+    $options
+  </select>
+  <input type="submit" value="Submit">
+</form>
+HEREDOC;
+
+  return $output;
+});
+
+$app->post('/copygroup', function (Request $request) use ($app) {
+  $app['session']->start();
+  $token = $app['session']->get('auth_token');
+  // check if we have our auth keys
+  if (null === ($secret = $app['session']->get('auth_secret'))) {
+   return $app->redirect('/');
+  }
+
+  $copy_from = $request->get('copy_from');
+  $copy_to = $request->get('copy_to');
+  if (!empty($copy_from) && !empty($copy_to)) {
+    $client = new Client($app['session']->get('domain') . '/api/v1/rest', array(
+      'curl.CURLOPT_SSL_VERIFYPEER' => TRUE,
+      'curl.CURLOPT_CAINFO' => 'assets/mozilla.pem',
+      'curl.CURLOPT_FOLLOWLOCATION' => FALSE,
+    ));
+
+    $oauth = new OauthPlugin(array(
+      'consumer_key' => $app['session']->get('consumer_key'),
+      'consumer_secret' => $app['session']->get('consumer_secret'),
+      'token' => $token,
+      'token_secret' => $secret,
+    ));
+    $client->addSubscriber($oauth);
+
+    $response = $client->post("groups/$copy_to/copy/$copy_from")->send();
+
+    $app[ 'session' ]->set( 'flash', array(
+      'type'  =>'info',
+      'short' =>'Group Copied!',
+    ) );
+  }
+  return $app->redirect('/copygroup');
+});
 
 $app->run();
 
